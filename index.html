@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Расчет ЖКХ: Москва и Подмосковье</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Учет до 10 объектов</p>
+          <h1>Расчет ЖКХ</h1>
+        </div>
+        <div class="topbar-actions">
+          <button class="ghost" id="exportBtn" type="button">Экспорт</button>
+          <label class="ghost file-button">
+            Импорт
+            <input id="importInput" type="file" accept="application/json" />
+          </label>
+          <button class="primary" id="addObjectBtn" type="button">Добавить объект</button>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <aside class="sidebar" aria-label="Объекты">
+          <div class="sidebar-head">
+            <h2>Объекты</h2>
+            <span id="objectCount">0 / 10</span>
+          </div>
+          <div class="object-list" id="objectList"></div>
+        </aside>
+
+        <section class="content" id="emptyState">
+          <div class="empty">
+            <h2>Добавьте первый объект</h2>
+            <p>Для расчета нужны объект, управляющая компания, тарифы и ежемесячные показания.</p>
+            <button class="primary" id="emptyAddBtn" type="button">Добавить объект</button>
+          </div>
+        </section>
+
+        <section class="content hidden" id="objectView">
+          <div class="panel object-panel">
+            <form id="objectForm" class="form-grid">
+              <label>
+                Название
+                <input id="objectName" required maxlength="80" />
+              </label>
+              <label>
+                Регион
+                <select id="objectRegion">
+                  <option value="Москва">Москва</option>
+                  <option value="Подмосковье">Подмосковье</option>
+                </select>
+              </label>
+              <label>
+                Управляющая компания / СНТ
+                <input id="objectCompany" maxlength="120" />
+              </label>
+              <label>
+                Площадь, м²
+                <input id="objectArea" type="number" min="0" step="0.01" />
+              </label>
+            </form>
+          </div>
+
+          <div class="tabs" role="tablist" aria-label="Разделы">
+            <button class="tab active" data-tab="calc" type="button">Расчет</button>
+            <button class="tab" data-tab="tariffs" type="button">Тарифы</button>
+            <button class="tab" data-tab="readings" type="button">Показания</button>
+          </div>
+
+          <section class="tab-page" id="calcPage">
+            <div class="panel calc-controls">
+              <label>
+                Месяц расчета
+                <input id="calcMonth" type="month" />
+              </label>
+              <button class="primary" id="calculateBtn" type="button">Рассчитать</button>
+            </div>
+            <div id="calculationResult" class="result-grid"></div>
+          </section>
+
+          <section class="tab-page hidden" id="tariffsPage">
+            <div class="panel section-head">
+              <div>
+                <h2>Тарифы</h2>
+                <p>Добавляйте отдельные строки на каждый период действия тарифа.</p>
+              </div>
+              <button class="primary" id="addTariffBtn" type="button">Добавить тариф</button>
+            </div>
+            <div id="tariffList" class="table-wrap"></div>
+          </section>
+
+          <section class="tab-page hidden" id="readingsPage">
+            <div class="panel section-head">
+              <div>
+                <h2>Показания</h2>
+                <p>Текущий расход считается как разница с предыдущим месяцем.</p>
+              </div>
+              <button class="primary" id="addReadingBtn" type="button">Добавить месяц</button>
+            </div>
+            <div id="readingList" class="table-wrap"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="objectDialog">
+      <form method="dialog" class="dialog-card" id="newObjectForm">
+        <h2>Новый объект</h2>
+        <label>
+          Название
+          <input id="newObjectName" required maxlength="80" placeholder="Квартира Москва" />
+        </label>
+        <label>
+          Регион
+          <select id="newObjectRegion">
+            <option value="Москва">Москва</option>
+            <option value="Подмосковье">Подмосковье</option>
+          </select>
+        </label>
+        <label>
+          УК / СНТ
+          <input id="newObjectCompany" maxlength="120" placeholder="Название организации" />
+        </label>
+        <div class="dialog-actions">
+          <button class="ghost" value="cancel" type="submit">Отмена</button>
+          <button class="primary" value="default" type="submit">Создать</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="tariffDialog">
+      <form method="dialog" class="dialog-card" id="tariffForm">
+        <h2>Тариф</h2>
+        <label>
+          Услуга
+          <select id="tariffService">
+            <option value="electricity_day">Электроэнергия, день</option>
+            <option value="electricity_night">Электроэнергия, ночь</option>
+            <option value="cold_water">Холодная вода</option>
+            <option value="hot_water">Горячая вода</option>
+            <option value="sewerage">Водоотведение</option>
+            <option value="gas">Газ</option>
+            <option value="membership">Членские взносы</option>
+          </select>
+        </label>
+        <label>
+          Тариф, руб.
+          <input id="tariffRate" type="number" min="0" step="0.0001" required />
+        </label>
+        <label>
+          Единица
+          <select id="tariffUnit">
+            <option value="per_unit">за единицу расхода</option>
+            <option value="fixed">фиксированно в месяц</option>
+            <option value="per_m2">за м²</option>
+          </select>
+        </label>
+        <div class="form-grid two">
+          <label>
+            Действует с
+            <input id="tariffFrom" type="date" required />
+          </label>
+          <label>
+            Действует по
+            <input id="tariffTo" type="date" />
+          </label>
+        </div>
+        <label>
+          Комментарий
+          <input id="tariffNote" maxlength="120" placeholder="Например: повышение с 1 июля" />
+        </label>
+        <div class="dialog-actions">
+          <button class="ghost" value="cancel" type="submit">Отмена</button>
+          <button class="primary" value="default" type="submit">Сохранить</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="readingDialog">
+      <form method="dialog" class="dialog-card" id="readingForm">
+        <h2>Показания за месяц</h2>
+        <label>
+          Месяц
+          <input id="readingMonth" type="month" required />
+        </label>
+        <div class="form-grid two">
+          <label>
+            Свет день
+            <input id="readingElectricityDay" type="number" min="0" step="0.01" />
+          </label>
+          <label>
+            Свет ночь
+            <input id="readingElectricityNight" type="number" min="0" step="0.01" />
+          </label>
+          <label>
+            ХВС
+            <input id="readingColdWater" type="number" min="0" step="0.01" />
+          </label>
+          <label>
+            ГВС
+            <input id="readingHotWater" type="number" min="0" step="0.01" />
+          </label>
+          <label>
+            Газ
+            <input id="readingGas" type="number" min="0" step="0.01" />
+          </label>
+        </div>
+        <div class="dialog-actions">
+          <button class="ghost" value="cancel" type="submit">Отмена</button>
+          <button class="primary" value="default" type="submit">Сохранить</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="app.js"></script>
+  </body>
+</html>
